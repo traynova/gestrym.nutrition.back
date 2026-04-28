@@ -1,0 +1,537 @@
+basePath: /gestrym-nutrition
+definitions:
+  handlers.logFoodRequest:
+    properties:
+      date:
+        description: '"YYYY-MM-DD", optional'
+        type: string
+      foodId:
+        type: integer
+      mealType:
+        $ref: '#/definitions/models.MealType'
+      notes:
+        type: string
+      quantity:
+        type: number
+    required:
+    - foodId
+    - quantity
+    type: object
+  handlers.setGoalRequest:
+    properties:
+      activityLevel:
+        $ref: '#/definitions/models.ActivityLevel'
+      ageYears:
+        type: integer
+      fitnessGoal:
+        $ref: '#/definitions/models.FitnessGoalType'
+      heightCm:
+        type: number
+      isMale:
+        type: boolean
+      weightKg:
+        type: number
+    required:
+    - ageYears
+    - heightCm
+    - weightKg
+    type: object
+  models.ActivityLevel:
+    enum:
+    - sedentary
+    - light
+    - moderate
+    - active
+    - very_active
+    type: string
+    x-enum-comments:
+      ActivityActive: x1.725
+      ActivityLight: x1.375
+      ActivityModerate: x1.55
+      ActivitySedentary: x1.2
+      ActivityVeryActive: x1.9
+    x-enum-descriptions:
+    - x1.2
+    - x1.375
+    - x1.55
+    - x1.725
+    - x1.9
+    x-enum-varnames:
+    - ActivitySedentary
+    - ActivityLight
+    - ActivityModerate
+    - ActivityActive
+    - ActivityVeryActive
+  models.FitnessGoalType:
+    enum:
+    - lose_weight
+    - maintain
+    - gain_mass
+    type: string
+    x-enum-comments:
+      FitnessGoalGainMass: surplus +500 kcal
+      FitnessGoalLoseWeight: deficit -500 kcal
+      FitnessGoalMaintain: TDEE
+    x-enum-descriptions:
+    - deficit -500 kcal
+    - TDEE
+    - surplus +500 kcal
+    x-enum-varnames:
+    - FitnessGoalLoseWeight
+    - FitnessGoalMaintain
+    - FitnessGoalGainMass
+  models.MealType:
+    enum:
+    - breakfast
+    - lunch
+    - dinner
+    - snack
+    type: string
+    x-enum-varnames:
+    - MealTypeBreakfast
+    - MealTypeLunch
+    - MealTypeDinner
+    - MealTypeSnack
+  usecases.AddMealDayInput:
+    properties:
+      dayNumber:
+        type: integer
+      mealPlanId:
+        type: integer
+    type: object
+  usecases.AddMealItemInput:
+    properties:
+      foodId:
+        type: integer
+      mealDayId:
+        type: integer
+      mealType:
+        $ref: '#/definitions/models.MealType'
+      quantity:
+        type: number
+    type: object
+  usecases.CreateMealPlanInput:
+    properties:
+      createdBy:
+        type: integer
+      durationDays:
+        type: integer
+      goalCalories:
+        type: number
+      goalCarbs:
+        type: number
+      goalFats:
+        type: number
+      goalProtein:
+        type: number
+      isTemplate:
+        type: boolean
+      name:
+        type: string
+      userId:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: API para el manejo de entrenamientos.
+  title: Gestrym API Nutrition
+  version: "1.0"
+paths:
+  /private/goals/calories:
+    get:
+      description: Returns the user's stored calorie and macro targets with AI adjustment
+        metadata.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current calorie goal
+      tags:
+      - CalorieGoals
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Calculates TDEE using Mifflin-St Jeor + activity level and stores the result.
+        activityLevel: sedentary | light | moderate | active | very_active
+        fitnessGoal:   lose_weight | maintain | gain_mass
+      parameters:
+      - description: Physical data + goal
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.setGoalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Set personalized calorie & macro targets
+      tags:
+      - CalorieGoals
+  /private/goals/calories/adjust:
+    post:
+      description: |-
+        Fetches real weight metrics from progress-service and applies adaptive
+        calorie/macro adjustments based on the user's fitness goal and actual progress.
+        This is the AI integration endpoint — call it periodically (e.g. weekly).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Auto-adjust calories from progress-service data
+      tags:
+      - CalorieGoals
+  /private/logs:
+    get:
+      description: Returns totals, goals, and progress for a specific date.
+      parameters:
+      - description: Date (YYYY-MM-DD), defaults to today
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get daily nutrition summary
+      tags:
+      - NutritionTracking
+    post:
+      consumes:
+      - application/json
+      description: Records a food item the user ate, calculates nutrition automatically.
+      parameters:
+      - description: Food intake
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.logFoodRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Log food intake
+      tags:
+      - NutritionTracking
+  /private/logs/history:
+    get:
+      description: Returns paginated nutrition logs within a date range.
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end
+        required: true
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 20, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get nutrition history
+      tags:
+      - NutritionTracking
+  /private/meal-plans:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new meal plan for a user or as a template.
+      parameters:
+      - description: Meal Plan Data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/usecases.CreateMealPlanInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a meal plan
+      tags:
+      - MealPlans
+  /private/meal-plans/{id}:
+    get:
+      description: Returns a meal plan with its days and items.
+      parameters:
+      - description: Meal Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get meal plan by ID
+      tags:
+      - MealPlans
+  /private/meal-plans/{id}/days:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new meal day to an existing meal plan.
+      parameters:
+      - description: Meal Plan ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Day data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/usecases.AddMealDayInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a day to a meal plan
+      tags:
+      - MealPlans
+  /private/meal-plans/{id}/items:
+    post:
+      consumes:
+      - application/json
+      description: Assigns a food item with quantity and meal type to a plan's day.
+      parameters:
+      - description: Meal Plan ID (used for context)
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/usecases.AddMealItemInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add food item to a meal plan day
+      tags:
+      - MealPlans
+  /private/meal-plans/user/{userId}:
+    get:
+      description: Returns all meal plans assigned to a user.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get meal plans for a user
+      tags:
+      - MealPlans
+  /public/foods:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of foods filtered by name.
+      parameters:
+      - description: Food name to search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search foods
+      tags:
+      - Nutrition
+  /public/foods/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve details of a specific food item.
+      parameters:
+      - description: Food ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get food by ID
+      tags:
+      - Nutrition
+  /public/foods/import:
+    post:
+      consumes:
+      - application/json
+      description: Triggers a one-time import of basic food categories from USDA API.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Manual import of foods from USDA
+      tags:
+      - Nutrition
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BasicAuth:
+    type: basic
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
