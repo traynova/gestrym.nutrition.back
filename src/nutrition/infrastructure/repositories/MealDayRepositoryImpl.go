@@ -41,3 +41,9 @@ func (r *MealDayRepositoryImpl) FindByID(id uint) (*models.MealDay, error) {
 	}
 	return &day, nil
 }
+func (r *MealDayRepositoryImpl) DeleteByPlanID(planID uint) error {
+	// First delete all items for these days (handled by DB if cascade is set, but better safe)
+	// Actually, let's just delete the days and let cascade work if configured, 
+	// or delete manually if not.
+	return r.DB.Where("meal_plan_id = ?", planID).Delete(&models.MealDay{}).Error
+}

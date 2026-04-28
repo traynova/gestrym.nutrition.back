@@ -28,3 +28,6 @@ func (r *MealItemRepositoryImpl) FindByDayID(dayID uint) ([]models.MealItem, err
 		Find(&items).Error
 	return items, err
 }
+func (r *MealItemRepositoryImpl) DeleteByDayID(dayID uint) error {
+	return r.DB.Where("meal_day_id = ?", dayID).Delete(&models.MealItem{}).Error
+}

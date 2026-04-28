@@ -95,6 +95,7 @@ func (r *routesDefinition) addRoutes(serverInstance *gin.Engine) {
 	getUserMealPlansUC := nutritionUseCases.NewGetUserMealPlansUseCase(mealPlanRepo)
 	addMealDayUC := nutritionUseCases.NewAddMealDayUseCase(mealPlanRepo, mealDayRepo)
 	addMealItemUC := nutritionUseCases.NewAddMealItemUseCase(mealDayRepo, mealItemRepo, foodRepo)
+	createMealPlanFromAIUC := nutritionUseCases.NewCreateMealPlanFromAIUseCase(mealPlanRepo, mealDayRepo, mealItemRepo, foodRepo)
 
 	// ── Use Cases: Nutrition Tracking ─────────────────────────────────────────
 	logFoodIntakeUC := nutritionUseCases.NewLogFoodIntakeUseCase(nutritionLogRepo, foodRepo)
@@ -125,6 +126,7 @@ func (r *routesDefinition) addRoutes(serverInstance *gin.Engine) {
 		getCalorieGoalUC,
 		adjustCaloriesUC,
 	)
+	aiMealPlanHandler := nutritionHandlers.NewAIMealPlanHandler(createMealPlanFromAIUC)
 
 	// ── Router Groups ─────────────────────────────────────────────────────────
 	r.serverGroup = serverInstance.Group(docs.SwaggerInfo.BasePath)
@@ -133,10 +135,12 @@ func (r *routesDefinition) addRoutes(serverInstance *gin.Engine) {
 	r.publicGroup = r.serverGroup.Group("/public")
 	r.privateGroup = r.serverGroup.Group("/private")
 	r.protectedGroup = r.serverGroup.Group("/protected")
+	r.internalGroup = r.serverGroup.Group("/internal")
 
 	// Middleware
 	r.privateGroup.Use(middleware.SetupJWTMiddleware())
 	r.protectedGroup.Use(middleware.SetupApiKeyMiddleware())
+	r.internalGroup.Use(middleware.SetupApiKeyMiddleware())
 
 	// ── Public Routes ─────────────────────────────────────────────────────────
 	foodsGroup := r.publicGroup.Group("/foods")
@@ -173,7 +177,7 @@ func (r *routesDefinition) addRoutes(serverInstance *gin.Engine) {
 	}
 
 	r.addPublicRoutes()
-	r.addInternalRoutes()
+	r.addInternalRoutes(aiMealPlanHandler)
 	r.addProtectedRoutes()
 }
 
@@ -199,6 +203,11 @@ func (r *routesDefinition) addPublicRoutes() {}
 
 func (r *routesDefinition) addPrivateRoutes() {}
 
-func (r *routesDefinition) addInternalRoutes() {}
+func (r *routesDefinition) addInternalRoutes(aiHandler *nutritionHandlers.AIMealPlanHandler) {
+	mealPlansGroup := r.internalGroup.Group("/meal-plans")
+	{
+		mealPlansGroup.POST("/ai", aiHandler.CreateMealPlanFromAI)
+	}
+}
 
 func (r *routesDefinition) addProtectedRoutes() {}

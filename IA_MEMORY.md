@@ -105,7 +105,7 @@ Gestrym.Nutrition.Back/
 - **FoodCategory** — ID, Name
 
 ### 🆕 A Implementar
-- **MealPlan** — ID, UserID, Name, DurationDays, CreatedBy, IsTemplate, GoalCalories, GoalProtein, GoalCarbs, GoalFats, CreatedAt
+- **MealPlan** — ID, UserID, Name, DurationDays, CreatedBy, IsTemplate, GoalCalories, GoalProtein, GoalCarbs, GoalFats, IsAIGenerated, CreatedAt
 - **MealDay** — ID, MealPlanID, DayNumber
 - **MealItem** — ID, MealDayID, FoodID, Quantity (gramos), MealType (breakfast/lunch/dinner/snack)
 - **NutritionLog** — ID, UserID, Date, FoodID, Quantity, Calories, Protein, Carbs, Fats (valores pre-calculados)
@@ -149,6 +149,7 @@ Gestrym.Nutrition.Back/
 | POST   | `/goals/calories`                 | Configurar metas calóricas (TDEE)         |
 | GET    | `/goals/calories`                 | Obtener metas actuales                    |
 | POST   | `/goals/calories/adjust`          | **IA:** Ajustar metas con progress-service|
+| POST   | `/internal/meal-plans/ai`         | **IA:** Crear/actualizar planes (AI Service)|
 
 ---
 
@@ -241,7 +242,7 @@ Al registrar un alimento:
 ## 🚀 PREPARACIÓN FUTURA (IA INTEGRATION)
 
 El sistema debe estar diseñado para:
-- [ ] Planes de comida generados por IA
+- [x] Planes de comida generados por IA
 - [ ] Nutrición adaptativa (basada en progress-service)
 - [ ] Objetivos calóricos personalizados
 - [ ] Metas de macros
@@ -300,3 +301,4 @@ func (h *XHandler) Method(c *gin.Context) { ... }
 | ---------- | --------------------------------------------------------- |
 | 2026-04-27 | Creación de IA_MEMORY.md con estado inicial del proyecto  |
 | 2026-04-27 | Prompt maestro definido para nutrition-service completo   |
+| 2026-04-28 | Integración con AI Service para creación de planes (Internal API) |

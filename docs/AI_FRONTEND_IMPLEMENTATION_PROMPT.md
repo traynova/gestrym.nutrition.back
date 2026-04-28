@@ -45,6 +45,12 @@ Cuerpo: `{ "foodId": number, "quantity": number, "mealType": string, "date": str
 #### 3. Objetivos Adaptativos (`POST /private/goals/calories/adjust`)
 Endpoint clave de IA. No requiere cuerpo. Al llamarlo, el backend recalibra los macros del usuario basándose en su progreso real de peso. Devuelve un `adjustmentNote` que debe mostrarse como un toast o notificación de éxito.
 
+#### 4. Planes Generados por IA (Model Update)
+Los planes de comida ahora incluyen un flag `isAiGenerated: boolean`. Si es true, muestra un badge de "Smart Plan" o "Generado por IA" en la UI para aumentar el valor percibido.
+
+> [!NOTE]
+> El endpoint `POST /internal/meal-plans/ai` es para uso exclusivo del `ai-service`. El frontend consume estos planes a través de los endpoints de planes privados estándar.
+
 ---
 
 ## 🎨 Requerimientos de UI/UX (Premium Feel)

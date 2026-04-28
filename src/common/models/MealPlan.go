@@ -14,6 +14,7 @@ type MealPlan struct {
 	GoalProtein  float64   `gorm:"default:0" json:"goalProtein"`
 	GoalCarbs    float64   `gorm:"default:0" json:"goalCarbs"`
 	GoalFats     float64   `gorm:"default:0" json:"goalFats"`
+	IsAIGenerated bool      `gorm:"default:false" json:"isAiGenerated"`
 	// Relations
 	Days         []MealDay `gorm:"foreignKey:MealPlanID" json:"days,omitempty"`
 	CreatedAt    time.Time `json:"createdAt"`
