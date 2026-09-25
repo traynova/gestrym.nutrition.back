@@ -1,0 +1,16 @@
+networks:
+  gestrym-network:
+    external: true
+
+services:
+  gestrym-nutrition:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${NUTRITION_IMAGE:-jhonnier/back-nutrition:${VERSION:-1.0.0}}
+    container_name: gestrym-nutrition
+    restart: always
+    env_file:
+      - stack.env
+    networks:
+      - gestrym-network
